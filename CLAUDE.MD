@@ -53,7 +53,36 @@ cogutil/
 - `numeric.h` - Entropy, distance metrics, floating-point comparisons
 - `random.h` - Random number generation utilities
 - `zipf.h` - Zipfian distribution implementation
-- `tensor.h` - ATen-style tensor operations
+
+### ATen-Style Tensor System
+- `tensor.h` - Core tensor operations (ATen-inspired)
+  - Multi-dimensional arrays with shared storage
+  - Factory methods: zeros, ones, rand, randn, eye, arange, linspace
+  - Element-wise operations and mathematical functions
+  - Reductions: sum, mean, var, min, max, norm
+  - Linear algebra: matmul, dot, outer, transpose
+
+### Tensor-Enhanced AtomSpace (ATenSpace Integration)
+- `tensor_atom.h` - Symbolic atoms with tensor embeddings
+  - TensorAtom: Base class with UUID, TruthValue, AttentionValue, embedding
+  - TensorNode: Named entities/concepts with embeddings
+  - TensorLink: Hypergraph edges connecting atoms
+  - PLN truth values and ECAN attention values
+  - Atom types: ConceptNode, PredicateNode, InheritanceLink, etc.
+
+- `tensor_space.h` - Hypergraph container with tensor operations
+  - Thread-safe atom storage with indices (by type, name, UUID)
+  - Tensor similarity search (k-nearest neighbors)
+  - Attention bank for ECAN-style focus management
+  - Neighborhood embedding computation
+
+- `tensor_logic.h` - Multi-entity, multi-scale tensor logic
+  - Fuzzy logic: fuzzy_and, fuzzy_or, fuzzy_not, fuzzy_implication
+  - T-norms: Gödel, product, Lukasiewicz
+  - Multi-entity operations: interaction tensors, attention, message passing
+  - Multi-scale: aggregation, coarse-to-fine propagation
+  - Network-aware: centrality, PageRank, GNN-style updates
+  - MultiEntityNetwork: Complete system for multi-entity tensor reasoning
 
 ### Core Utilities
 - `Logger.h` - Logging framework (DEBUG, INFO, WARN, ERROR, NONE levels)

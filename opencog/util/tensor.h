@@ -987,7 +987,7 @@ public:
         OC_ASSERT(_shape.size() == 1 && other._shape.size() == 1,
                   "Tensor::outer: both tensors must be 1D");
 
-        Tensor result({_numel, other._numel});
+        Tensor result(shape_type{_numel, other._numel});
         for (size_t i = 0; i < _numel; ++i) {
             for (size_t j = 0; j < other._numel; ++j) {
                 result.at({i, j}) = (*_data)[_offset + i] * (*other._data)[other._offset + j];
