@@ -116,6 +116,7 @@ INSTALL(FILES
 	RandGen.h
 	random.h
 	sigslot.h
+	tensor.h
 	zipf.h
 	DESTINATION "include/opencog/util"
 )
