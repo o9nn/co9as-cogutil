@@ -115,6 +115,20 @@ ADD_DEFINITIONS(-DDATADIR="${DATADIR}")
 SET (MAN_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/share/man")
 
 # ===================================================================
+# Vendored dependencies support
+# The vendor directory contains essential headers/scripts from 3rd party libs
+# The 3p directory contains full source repos (not tracked in git)
+
+IF (EXISTS "${CMAKE_SOURCE_DIR}/opencog/util/vendor/CMakeLists.txt")
+	ADD_SUBDIRECTORY(opencog/util/vendor)
+	MESSAGE(STATUS "Using vendored dependencies from opencog/util/vendor/")
+ENDIF()
+
+IF (EXISTS "${CMAKE_SOURCE_DIR}/3p/CMakeLists.txt")
+	ADD_SUBDIRECTORY(3p)
+ENDIF()
+
+# ===================================================================
 # Decide what to build, based on the packages found.
 
 ADD_SUBDIRECTORY(cmake)

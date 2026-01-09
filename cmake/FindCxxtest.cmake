@@ -10,6 +10,18 @@
 # Find path to the cxxtestgen.py script (NB: this stuff should move to FindCXXTEST.cmake)
 # CXXTEST_BIN_DIR environment variable must have been defined already
 
+# First, check for vendored cxxtest in the project
+IF (EXISTS "${CMAKE_SOURCE_DIR}/opencog/util/vendor/cxxtest/bin/cxxtestgen")
+	MESSAGE(STATUS "Using vendored CXXTest from opencog/util/vendor/cxxtest")
+	SET(CXXTEST_FOUND 1)
+	SET(CXXTEST_GEN "${CMAKE_SOURCE_DIR}/opencog/util/vendor/cxxtest/bin/cxxtestgen" CACHE FILEPATH "CxxTest binary filepath")
+	# Include path is vendor/ so that #include <cxxtest/...> works
+	SET(CXXTEST_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/opencog/util/vendor" CACHE PATH "CxxTest include path")
+	SET(CXXTEST_VENDORED TRUE)
+ENDIF()
+
+# If not found in vendor, look for system installation
+IF (NOT CXXTEST_FOUND)
 # cxxtest has a Python version and a Perl version. First, look
 # for the Python version (.py extension).
 FIND_PATH(CXXTEST_PYTHON_BIN_DIR cxxtestgen.py
@@ -84,3 +96,5 @@ IF(NOT CXXTEST_FOUND)
 		ENDIF(Cxxtest_FIND_REQUIRED)
 	ENDIF(NOT Cxxtest_FIND_QUIETLY)
 ENDIF(NOT CXXTEST_FOUND)
+
+ENDIF(NOT CXXTEST_FOUND) # Close the outer IF block for vendored check

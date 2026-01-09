@@ -1,0 +1,12 @@
+# Ignore cloned third-party repositories
+# These are large and should be cloned on demand
+# Only the CMakeLists.txt is tracked
+
+cxxtest/
+binutils/
+
+# Build artifacts
+build/
+*.o
+*.a
+*.so
