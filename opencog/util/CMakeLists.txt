@@ -25,71 +25,95 @@ ADD_LIBRARY(cogutil SHARED
 )
 
 IF (HAVE_BFD AND HAVE_IBERTY)
-	check_symbol_exists(bfd_get_section_flags "bfd.h" HAVE_DECL_BFD_GET_SECTION_FLAGS)
-	check_symbol_exists(bfd_section_flags "bfd.h" HAVE_DECL_BFD_SECTION_FLAGS)
+	# When using 3p BFD, need to define PACKAGE before including bfd.h
+	IF (BFD_NEEDS_PACKAGE_DEFS)
+		add_definitions(-DPACKAGE="cogutil" -DPACKAGE_VERSION="1.0")
+	ENDIF()
 
-	check_symbol_exists(bfd_get_section_vma "bfd.h" HAVE_DECL_BFD_GET_SECTION_VMA)
-	check_symbol_exists(bfd_section_vma "bfd.h" HAVE_DECL_BFD_SECTION_VMA)
-
-	if(HAVE_DECL_BFD_GET_SECTION_FLAGS)
-		# This should be
-		# add_compile_definitions(HAVE_DECL_BFD_GET_SECTION_FLAGS)
-		# except that requires CMake version 3.12 which is not available
-		# in Ubuntu 18.04 LTS -- FIXME someday...
-		add_definitions(-DHAVE_DECL_BFD_GET_SECTION_FLAGS=1)
-	endif()
-	if(HAVE_DECL_BFD_SECTION_FLAGS)
+	# Handle API differences between BFD versions
+	IF (BFD_HAS_1_ARG_API)
+		# 3p/modern BFD uses 1-arg section functions
 		add_definitions(-DHAVE_DECL_BFD_SECTION_FLAGS=1)
-	endif()
-	if(HAVE_DECL_BFD_GET_SECTION_VMA)
-		add_definitions(-DHAVE_DECL_BFD_GET_SECTION_VMA=1)
-	endif()
-	if(HAVE_DECL_BFD_SECTION_VMA)
 		add_definitions(-DHAVE_DECL_BFD_SECTION_VMA=1)
-	endif()
-
-	# Check if bfd_section_size takes one or two arguments.
-	set(CMAKE_REQUIRED_LIBRARIES ${BFD_LIBRARY})
-	check_c_source_compiles(
-		"#include <bfd.h>
-		#include <malloc.h>
-		int main(int argc, char** argv) {
-			asection *sec = (asection*) malloc(sizeof(*sec));
-			bfd_section_size(sec);
-			free(sec);
-			return 0;
-		}"
-		HAVE_1_ARG_BFD_SECTION_SIZE
-	)
-	if(HAVE_1_ARG_BFD_SECTION_SIZE)
 		add_definitions(-DHAVE_1_ARG_BFD_SECTION_SIZE=1)
-	else()
-		add_definitions(-DHAVE_2_ARG_BFD_SECTION_SIZE=1)
-	endif()
-
-	# Check if bfd_section_vma takes one or two arguments.
-	check_c_source_compiles(
-		"#include <bfd.h>
-		#include <malloc.h>
-		int main(int argc, char** argv) {
-			asection *sec = (asection *) malloc(sizeof(*sec));
-			bfd_section_vma(sec);
-			free(sec);
-			return 0;
-		}"
-		HAVE_1_ARG_BFD_SECTION_VMA
-	)
-	if(HAVE_1_ARG_BFD_SECTION_VMA)
 		add_definitions(-DHAVE_1_ARG_BFD_SECTION_VMA=1)
-	else()
-		add_definitions(-DHAVE_2_ARG_BFD_SECTION_VMA=1)
-	endif()
+	ELSE()
+		# System BFD - detect API
+		check_symbol_exists(bfd_get_section_flags "bfd.h" HAVE_DECL_BFD_GET_SECTION_FLAGS)
+		check_symbol_exists(bfd_section_flags "bfd.h" HAVE_DECL_BFD_SECTION_FLAGS)
+		check_symbol_exists(bfd_get_section_vma "bfd.h" HAVE_DECL_BFD_GET_SECTION_VMA)
+		check_symbol_exists(bfd_section_vma "bfd.h" HAVE_DECL_BFD_SECTION_VMA)
 
+		if(HAVE_DECL_BFD_GET_SECTION_FLAGS)
+			add_definitions(-DHAVE_DECL_BFD_GET_SECTION_FLAGS=1)
+		endif()
+		if(HAVE_DECL_BFD_SECTION_FLAGS)
+			add_definitions(-DHAVE_DECL_BFD_SECTION_FLAGS=1)
+		endif()
+		if(HAVE_DECL_BFD_GET_SECTION_VMA)
+			add_definitions(-DHAVE_DECL_BFD_GET_SECTION_VMA=1)
+		endif()
+		if(HAVE_DECL_BFD_SECTION_VMA)
+			add_definitions(-DHAVE_DECL_BFD_SECTION_VMA=1)
+		endif()
+
+		# Check if bfd_section_size takes one or two arguments.
+		set(CMAKE_REQUIRED_LIBRARIES ${BFD_LIBRARY})
+		check_c_source_compiles(
+			"#include <bfd.h>
+			#include <malloc.h>
+			int main(int argc, char** argv) {
+				asection *sec = (asection*) malloc(sizeof(*sec));
+				bfd_section_size(sec);
+				free(sec);
+				return 0;
+			}"
+			HAVE_1_ARG_BFD_SECTION_SIZE
+		)
+		if(HAVE_1_ARG_BFD_SECTION_SIZE)
+			add_definitions(-DHAVE_1_ARG_BFD_SECTION_SIZE=1)
+		else()
+			add_definitions(-DHAVE_2_ARG_BFD_SECTION_SIZE=1)
+		endif()
+
+		# Check if bfd_section_vma takes one or two arguments.
+		check_c_source_compiles(
+			"#include <bfd.h>
+			#include <malloc.h>
+			int main(int argc, char** argv) {
+				asection *sec = (asection *) malloc(sizeof(*sec));
+				bfd_section_vma(sec);
+				free(sec);
+				return 0;
+			}"
+			HAVE_1_ARG_BFD_SECTION_VMA
+		)
+		if(HAVE_1_ARG_BFD_SECTION_VMA)
+			add_definitions(-DHAVE_1_ARG_BFD_SECTION_VMA=1)
+		else()
+			add_definitions(-DHAVE_2_ARG_BFD_SECTION_VMA=1)
+		endif()
+	ENDIF(BFD_HAS_1_ARG_API)
+
+	# Include directories for BFD and libiberty headers
 	INCLUDE_DIRECTORIES(${IBERTY_INCLUDE_DIR})
-	TARGET_LINK_LIBRARIES(cogutil
-		${BFD_LIBRARY}
-		iberty
-	)
+	IF (BFD_INCLUDE_DIR)
+		INCLUDE_DIRECTORIES(${BFD_INCLUDE_DIR})
+	ENDIF()
+
+	# Link libraries - use full path when using 3p libs
+	IF (IBERTY_LIBRARY)
+		TARGET_LINK_LIBRARIES(cogutil ${BFD_LIBRARY} ${IBERTY_LIBRARY})
+		# BFD may need additional dependencies when statically linked
+		IF (3P_SFRAME_LIBRARY)
+			TARGET_LINK_LIBRARIES(cogutil ${3P_SFRAME_LIBRARY})
+		ENDIF()
+		IF (3P_ZLIB_LIBRARY)
+			TARGET_LINK_LIBRARIES(cogutil ${3P_ZLIB_LIBRARY})
+		ENDIF()
+	ELSE()
+		TARGET_LINK_LIBRARIES(cogutil ${BFD_LIBRARY} iberty)
+	ENDIF()
 ENDIF (HAVE_BFD AND HAVE_IBERTY)
 
 INSTALL(FILES

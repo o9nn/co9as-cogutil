@@ -14,13 +14,13 @@
 #   └── build_3p.sh  - Build script for dependencies
 #
 
-option(USE_3P_LIBS "Use libraries built from 3p sources" OFF)
-
 message(STATUS "Third-party source directory: ${CMAKE_CURRENT_SOURCE_DIR}")
 
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/cxxtest")
     message(STATUS "  CXXTest: Available (vendored in opencog/util/vendor)")
 endif()
+
+set(_3P_LIBS_AVAILABLE FALSE)
 
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/binutils")
     message(STATUS "  Binutils: Available (BFD + libiberty source)")
@@ -30,9 +30,15 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/binutils")
     set(3P_LIBIBERTY_A "${3P_BINUTILS_BUILD}/libiberty/libiberty.a")
     set(3P_BFD_A "${3P_BINUTILS_BUILD}/bfd/.libs/libbfd.a")
     set(3P_BFD_H "${3P_BINUTILS_BUILD}/bfd/bfd.h")
+    set(3P_LIBSFRAME_A "${3P_BINUTILS_BUILD}/libsframe/.libs/libsframe.a")
+    set(3P_ZLIB_A "${3P_BINUTILS_BUILD}/zlib/libz.a")
 
     if(EXISTS "${3P_LIBIBERTY_A}")
         message(STATUS "    libiberty.a: Found (pre-built)")
+        set(3P_LIBIBERTY_FOUND TRUE)
+        set(3P_LIBIBERTY_LIBRARY "${3P_LIBIBERTY_A}")
+        set(3P_LIBIBERTY_INCLUDE "${CMAKE_CURRENT_SOURCE_DIR}/binutils/include")
+        # Export to parent scope
         set(3P_LIBIBERTY_FOUND TRUE PARENT_SCOPE)
         set(3P_LIBIBERTY_LIBRARY "${3P_LIBIBERTY_A}" PARENT_SCOPE)
         set(3P_LIBIBERTY_INCLUDE "${CMAKE_CURRENT_SOURCE_DIR}/binutils/include" PARENT_SCOPE)
@@ -42,21 +48,36 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/binutils")
 
     if(EXISTS "${3P_BFD_A}" AND EXISTS "${3P_BFD_H}")
         message(STATUS "    libbfd.a: Found (pre-built)")
+        set(3P_BFD_FOUND TRUE)
+        set(3P_BFD_LIBRARY "${3P_BFD_A}")
+        set(3P_BFD_INCLUDE "${3P_BINUTILS_BUILD}/bfd")
+        # Export to parent scope
         set(3P_BFD_FOUND TRUE PARENT_SCOPE)
         set(3P_BFD_LIBRARY "${3P_BFD_A}" PARENT_SCOPE)
         set(3P_BFD_INCLUDE "${3P_BINUTILS_BUILD}/bfd" PARENT_SCOPE)
+        # Also export libsframe and zlib paths for linking
+        if(EXISTS "${3P_LIBSFRAME_A}")
+            message(STATUS "    libsframe.a: Found (pre-built)")
+            set(3P_SFRAME_LIBRARY "${3P_LIBSFRAME_A}" PARENT_SCOPE)
+        endif()
+        if(EXISTS "${3P_ZLIB_A}")
+            message(STATUS "    libz.a: Found (pre-built)")
+            set(3P_ZLIB_LIBRARY "${3P_ZLIB_A}" PARENT_SCOPE)
+        endif()
     else()
         message(STATUS "    libbfd.a: Not built (run ./3p/build_3p.sh)")
     endif()
+
+    if(3P_LIBIBERTY_FOUND AND 3P_BFD_FOUND)
+        set(_3P_LIBS_AVAILABLE TRUE)
+    endif()
 endif()
 
-if(USE_3P_LIBS)
-    if(NOT 3P_LIBIBERTY_FOUND OR NOT 3P_BFD_FOUND)
-        message(STATUS "")
-        message(STATUS "USE_3P_LIBS enabled but libraries not built.")
-        message(STATUS "Please build them first:")
-        message(STATUS "  cd ${CMAKE_CURRENT_SOURCE_DIR}")
-        message(STATUS "  ./build_3p.sh")
-        message(STATUS "")
-    endif()
+if(USE_3P_LIBS AND NOT _3P_LIBS_AVAILABLE)
+    message(STATUS "")
+    message(STATUS "USE_3P_LIBS enabled but libraries not built.")
+    message(STATUS "Please build them first:")
+    message(STATUS "  cd ${CMAKE_CURRENT_SOURCE_DIR}")
+    message(STATUS "  ./build_3p.sh")
+    message(STATUS "")
 endif()

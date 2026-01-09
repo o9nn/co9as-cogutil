@@ -35,7 +35,8 @@ build_libs() {
 
     if [ ! -f Makefile ]; then
         echo "=== Configuring binutils ==="
-        ../configure \
+        # Build with -fPIC so libraries can be linked into shared objects
+        CFLAGS="-fPIC" CXXFLAGS="-fPIC" ../configure \
             --enable-targets=all \
             --disable-nls \
             --disable-gdb \
@@ -52,16 +53,28 @@ build_libs() {
             --quiet
     fi
 
+    # Configure subdirectories (needed before building)
+    echo "=== Configuring subdirectories ==="
+    make configure-libiberty configure-bfd configure-zlib configure-libsframe
+
     echo "=== Building libiberty ==="
     make -C libiberty -j$(nproc)
 
+    echo "=== Building zlib ==="
+    make -C zlib libz.a -j$(nproc)
+
+    echo "=== Building libsframe ==="
+    make -C libsframe -j$(nproc)
+
     echo "=== Building BFD ==="
-    make -C bfd -j$(nproc)
+    make -C bfd libbfd.la -j$(nproc)
 
     echo ""
     echo "=== Build complete ==="
     echo "Libraries built:"
     echo "  libiberty: $BUILD_DIR/libiberty/libiberty.a"
+    echo "  libsframe: $BUILD_DIR/libsframe/.libs/libsframe.a"
+    echo "  zlib:      $BUILD_DIR/zlib/libz.a"
     echo "  BFD:       $BUILD_DIR/bfd/.libs/libbfd.a"
     echo ""
     echo "Headers available:"

@@ -106,7 +106,9 @@ cogutil/
 **Required:**
 - CMake 3.12+
 - C++11-compatible compiler (GCC recommended)
-- CXXTest (for testing)
+
+**Vendored (no external install needed):**
+- CXXTest (testing framework) - `opencog/util/vendor/cxxtest/`
 
 **Optional:**
 - Binutils-dev + libiberty-dev (for pretty stack traces)
@@ -114,6 +116,47 @@ cogutil/
 - OpenMP (for parallelism)
 
 **Note:** All Boost dependencies have been removed as of v2.2.1.
+
+### Dependency Structure
+
+```
+cogutil/
+├── opencog/util/vendor/    # Vendored dependencies (minimal essential files)
+│   ├── cxxtest/            # CXXTest testing framework
+│   │   ├── cxxtest/*.h     # Framework headers
+│   │   ├── bin/cxxtestgen  # Test generator script
+│   │   └── cxxtest/*.py    # Python modules
+│   ├── bfd/                # BFD reference headers (for API compatibility)
+│   └── libiberty/          # libiberty reference headers
+│
+└── 3p/                     # Full third-party sources (not tracked in git)
+    ├── build_3p.sh         # Build script for dependencies
+    ├── cxxtest/            # Full CXXTest repo (optional, for reference)
+    └── binutils/           # GNU Binutils (BFD + libiberty source)
+```
+
+### Building with 3p Libraries
+
+When system packages (binutils-dev, libiberty-dev) are not available:
+
+```bash
+# Clone binutils source
+git clone --depth 1 https://sourceware.org/git/binutils-gdb.git 3p/binutils
+
+# Build BFD + libiberty from source
+cd 3p && ./build_3p.sh
+
+# Configure cogutil to use 3p libraries
+cd build
+cmake .. -DUSE_3P_LIBS=ON
+make -j$(nproc)
+```
+
+### CMake Options
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `USE_3P_LIBS` | OFF | Use libraries built from 3p sources |
 
 ## Testing
 

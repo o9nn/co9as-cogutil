@@ -51,6 +51,17 @@ SET(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/")
 include(cmake/OpenCogGccOptions.cmake)
 
 # ===================================================================
+# Third-party dependencies (must be before FIND_PACKAGE calls)
+# The 3p directory contains full source repos for building dependencies
+# when system packages are not available.
+
+option(USE_3P_LIBS "Use libraries built from 3p sources" OFF)
+
+IF (EXISTS "${CMAKE_SOURCE_DIR}/3p/CMakeLists.txt")
+	ADD_SUBDIRECTORY(3p)
+ENDIF()
+
+# ===================================================================
 # Check for existence of various required, optional packages.
 
 # Look for GNU C++ backtrace. Needed for basic stack printing.
@@ -117,15 +128,10 @@ SET (MAN_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/share/man")
 # ===================================================================
 # Vendored dependencies support
 # The vendor directory contains essential headers/scripts from 3rd party libs
-# The 3p directory contains full source repos (not tracked in git)
 
 IF (EXISTS "${CMAKE_SOURCE_DIR}/opencog/util/vendor/CMakeLists.txt")
 	ADD_SUBDIRECTORY(opencog/util/vendor)
 	MESSAGE(STATUS "Using vendored dependencies from opencog/util/vendor/")
-ENDIF()
-
-IF (EXISTS "${CMAKE_SOURCE_DIR}/3p/CMakeLists.txt")
-	ADD_SUBDIRECTORY(3p)
 ENDIF()
 
 # ===================================================================
