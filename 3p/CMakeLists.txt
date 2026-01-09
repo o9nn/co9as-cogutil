@@ -10,45 +10,53 @@
 # Structure:
 #   3p/
 #   ├── cxxtest/     - CXXTest testing framework (full repo)
-#   └── binutils/    - GNU Binutils (includes BFD + libiberty)
-#
-# Once unified builds are verified successful, we can determine exactly
-# which files from these repos are required and trim the vendor/ directory
-# to contain only the essential files.
+#   ├── binutils/    - GNU Binutils (includes BFD + libiberty)
+#   └── build_3p.sh  - Build script for dependencies
 #
 
-option(BUILD_3P_LIBIBERTY "Build libiberty from 3p sources" OFF)
-option(BUILD_3P_BFD "Build BFD from 3p sources" OFF)
+option(USE_3P_LIBS "Use libraries built from 3p sources" OFF)
 
 message(STATUS "Third-party source directory: ${CMAKE_CURRENT_SOURCE_DIR}")
 
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/cxxtest")
-    message(STATUS "  CXXTest: Available")
+    message(STATUS "  CXXTest: Available (vendored in opencog/util/vendor)")
 endif()
 
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/binutils")
-    message(STATUS "  Binutils: Available (BFD + libiberty)")
+    message(STATUS "  Binutils: Available (BFD + libiberty source)")
+
+    # Check for pre-built libraries
+    set(3P_BINUTILS_BUILD "${CMAKE_CURRENT_SOURCE_DIR}/binutils/build")
+    set(3P_LIBIBERTY_A "${3P_BINUTILS_BUILD}/libiberty/libiberty.a")
+    set(3P_BFD_A "${3P_BINUTILS_BUILD}/bfd/.libs/libbfd.a")
+    set(3P_BFD_H "${3P_BINUTILS_BUILD}/bfd/bfd.h")
+
+    if(EXISTS "${3P_LIBIBERTY_A}")
+        message(STATUS "    libiberty.a: Found (pre-built)")
+        set(3P_LIBIBERTY_FOUND TRUE PARENT_SCOPE)
+        set(3P_LIBIBERTY_LIBRARY "${3P_LIBIBERTY_A}" PARENT_SCOPE)
+        set(3P_LIBIBERTY_INCLUDE "${CMAKE_CURRENT_SOURCE_DIR}/binutils/include" PARENT_SCOPE)
+    else()
+        message(STATUS "    libiberty.a: Not built (run ./3p/build_3p.sh)")
+    endif()
+
+    if(EXISTS "${3P_BFD_A}" AND EXISTS "${3P_BFD_H}")
+        message(STATUS "    libbfd.a: Found (pre-built)")
+        set(3P_BFD_FOUND TRUE PARENT_SCOPE)
+        set(3P_BFD_LIBRARY "${3P_BFD_A}" PARENT_SCOPE)
+        set(3P_BFD_INCLUDE "${3P_BINUTILS_BUILD}/bfd" PARENT_SCOPE)
+    else()
+        message(STATUS "    libbfd.a: Not built (run ./3p/build_3p.sh)")
+    endif()
 endif()
 
-# Building BFD and libiberty from source is complex because they
-# require autoconf/configure. For now, we provide the headers in
-# vendor/ and link against system libraries.
-#
-# To build from source, users would need to:
-#   cd 3p/binutils
-#   mkdir build && cd build
-#   ../configure --enable-targets=all --disable-nls
-#   make -j$(nproc)
-#
-# The resulting libraries would be in:
-#   3p/binutils/build/bfd/.libs/libbfd.a
-#   3p/binutils/build/libiberty/libiberty.a
-
-if(BUILD_3P_LIBIBERTY OR BUILD_3P_BFD)
-    message(STATUS "Building 3p libs from source is not yet automated.")
-    message(STATUS "Please build binutils manually if system libs unavailable:")
-    message(STATUS "  cd ${CMAKE_CURRENT_SOURCE_DIR}/binutils")
-    message(STATUS "  mkdir build && cd build")
-    message(STATUS "  ../configure --enable-targets=all --disable-nls")
-    message(STATUS "  make -j\$(nproc)")
+if(USE_3P_LIBS)
+    if(NOT 3P_LIBIBERTY_FOUND OR NOT 3P_BFD_FOUND)
+        message(STATUS "")
+        message(STATUS "USE_3P_LIBS enabled but libraries not built.")
+        message(STATUS "Please build them first:")
+        message(STATUS "  cd ${CMAKE_CURRENT_SOURCE_DIR}")
+        message(STATUS "  ./build_3p.sh")
+        message(STATUS "")
+    endif()
 endif()
