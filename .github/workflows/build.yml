@@ -1,0 +1,287 @@
+name: Build, Test and Package
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  cogutil:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    container:
+      image: ${{ github.repository_owner }}/opencog-deps
+      options: --user root
+    env:
+      CCACHE_DIR: /ws/ccache
+    steps:
+      - name: Get date for ccache key
+        id: date
+        run: echo "date=$(date +%d-%m-%Y)" >> $GITHUB_OUTPUT
+
+      - name: Restore ccache
+        uses: actions/cache/restore@v3
+        with:
+          path: /ws/ccache
+          key: ccache-${{ steps.date.outputs.date }}
+          restore-keys: |
+            ccache-
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set number of make jobs
+        run: echo "MAKEFLAGS=-j2" >> $GITHUB_ENV
+
+      - name: CMake Configure
+        run: mkdir build && cd build && cmake ..
+
+      - name: Build
+        run: cd build && make
+
+      - name: Build tests
+        run: cd build && make tests
+
+      - name: Run tests
+        run: cd build && make check ARGS="$MAKEFLAGS"
+
+      - name: Print test log
+        if: always()
+        run: cat build/tests/Testing/Temporary/LastTest.log
+
+      - name: Upload cogutil workspace
+        uses: actions/upload-artifact@v4
+        with:
+          name: cogutil-workspace
+          path: .
+
+  atomspace:
+    needs: cogutil
+    runs-on: ubuntu-latest
+    permissions: {}
+    container:
+      image: ${{ github.repository_owner }}/opencog-deps
+      options: --user root
+    env:
+      CCACHE_DIR: /ws/ccache
+    steps:
+      - name: Download cogutil workspace
+        uses: actions/download-artifact@v4.1.3
+        with:
+          name: cogutil-workspace
+          path: cogutil
+
+      - name: Set number of make jobs
+        run: echo "MAKEFLAGS=-j2" >> $GITHUB_ENV
+
+      - name: Install CogUtil
+        run: cd cogutil/build && make install && ldconfig
+
+      - name: Checkout AtomSpace
+        run: git clone --depth 1 https://github.com/${{ github.repository_owner }}/atomspace atomspace
+
+      - name: CMake Configure
+        working-directory: atomspace
+        run: mkdir build && cd build && cmake ..
+
+      - name: Build
+        working-directory: atomspace
+        run: cd build && make
+
+      - name: Build tests
+        working-directory: atomspace
+        run: cd build && make tests
+
+      - name: Run tests
+        working-directory: atomspace
+        run: cd build && make check
+
+      - name: Install AtomSpace
+        working-directory: atomspace/build
+        run: make install && ldconfig
+
+      - name: Print test log
+        if: always()
+        working-directory: atomspace
+        run: cat build/tests/Testing/Temporary/LastTest.log
+
+      - name: Upload atomspace workspace
+        uses: actions/upload-artifact@v4
+        with:
+          name: atomspace-workspace
+          path: atomspace
+
+  cogserver:
+    needs: atomspace
+    runs-on: ubuntu-latest
+    permissions: {}
+    container:
+      image: ${{ github.repository_owner }}/opencog-deps
+      options: --user root
+    env:
+      CCACHE_DIR: /ws/ccache
+    steps:
+      - name: Download cogutil workspace
+        uses: actions/download-artifact@v4.1.3
+        with:
+          name: cogutil-workspace
+          path: cogutil
+
+      - name: Download atomspace workspace
+        uses: actions/download-artifact@v4.1.3
+        with:
+          name: atomspace-workspace
+          path: atomspace
+
+      - name: Set number of make jobs
+        run: echo "MAKEFLAGS=-j2" >> $GITHUB_ENV
+
+      - name: Install CogUtil
+        run: cd cogutil/build && make -j2 install && ldconfig
+
+      - name: Install AtomSpace
+        run: cd atomspace/build && make install && ldconfig
+
+      - name: Checkout and build AtomSpace Storage
+        run: |
+          git clone --depth 1 https://github.com/${{ github.repository_owner }}/atomspace-storage atomspace-storage
+          mkdir -p atomspace-storage/build
+          cd atomspace-storage/build && cmake .. && make -j2 && make -j2 install
+          ldconfig
+
+      - name: Checkout CogServer
+        run: git clone --depth 1 https://github.com/${{ github.repository_owner }}/cogserver cogserver
+
+      - name: CMake Configure
+        working-directory: cogserver
+        run: mkdir build && cd build && cmake ..
+
+      - name: Build
+        working-directory: cogserver
+        run: cd build && make
+
+      - name: Build tests
+        working-directory: cogserver
+        run: cd build && make tests
+
+      - name: Run tests
+        working-directory: cogserver
+        run: cd build && make check
+
+      - name: Install CogServer
+        working-directory: cogserver/build
+        run: make install && ldconfig
+
+      - name: Print test log
+        if: always()
+        working-directory: cogserver
+        run: cat build/tests/Testing/Temporary/LastTest.log
+
+      - name: Upload cogserver workspace
+        uses: actions/upload-artifact@v4
+        with:
+          name: cogserver-workspace
+          path: |
+            atomspace-storage
+            cogserver
+
+  unify:
+    needs: atomspace
+    runs-on: ubuntu-latest
+    permissions: {}
+    container:
+      image: ${{ github.repository_owner }}/opencog-deps
+      options: --user root
+    env:
+      CCACHE_DIR: /ws/ccache
+    steps:
+      - name: Download cogutil workspace
+        uses: actions/download-artifact@v4.1.3
+        with:
+          name: cogutil-workspace
+          path: cogutil
+
+      - name: Download atomspace workspace
+        uses: actions/download-artifact@v4.1.3
+        with:
+          name: atomspace-workspace
+          path: atomspace
+
+      - name: Set number of make jobs
+        run: echo "MAKEFLAGS=-j2" >> $GITHUB_ENV
+
+      - name: Install CogUtil
+        run: cd cogutil/build && make install && ldconfig
+
+      - name: Install AtomSpace
+        run: cd atomspace/build && make install && ldconfig
+
+      - name: Checkout Unify
+        run: git clone --depth 1 https://github.com/${{ github.repository_owner }}/unify unify
+
+      - name: CMake Configure
+        working-directory: unify
+        run: mkdir build && cd build && cmake ..
+
+      - name: Build
+        working-directory: unify
+        run: cd build && make
+
+      - name: Build tests
+        working-directory: unify
+        run: cd build && make tests
+
+      - name: Run tests
+        working-directory: unify
+        run: cd build && make check ARGS="$MAKEFLAGS"
+
+      - name: Install Unify
+        working-directory: unify/build
+        run: make install && ldconfig
+
+      - name: Print test log
+        if: always()
+        working-directory: unify
+        run: cat build/tests/Testing/Temporary/LastTest.log
+
+      - name: Upload unify workspace
+        uses: actions/upload-artifact@v4
+        with:
+          name: unify-workspace
+          path: unify
+
+  package:
+    needs: [unify, cogserver]
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    permissions: {}
+    container:
+      image: ${{ github.repository_owner }}/opencog-deps
+      options: --user root
+    env:
+      CCACHE_DIR: /ws/ccache
+    steps:
+      - name: Download cogutil workspace
+        uses: actions/download-artifact@v4.1.3
+        with:
+          name: cogutil-workspace
+          path: cogutil
+
+      - name: Build Debian package
+        run: cd cogutil/build && make install && make package
+
+      - name: Upload packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: packages
+          path: cogutil/build/packages/
+
+      - name: Get date for ccache key
+        id: date
+        run: echo "date=$(date +%d-%m-%Y)" >> $GITHUB_OUTPUT
+
+      - name: Save ccache
+        uses: actions/cache/save@v3
+        with:
+          path: /ws/ccache
+          key: ccache-${{ steps.date.outputs.date }}
