@@ -69,13 +69,13 @@ jobs:
         uses: actions/download-artifact@v4.1.3
         with:
           name: cogutil-workspace
-          path: cogutil
+          path: .
 
       - name: Set number of make jobs
         run: echo "MAKEFLAGS=-j2" >> $GITHUB_ENV
 
       - name: Install CogUtil
-        run: cd cogutil/build && make install && ldconfig
+        run: cd build && make install && ldconfig
 
       - name: Checkout AtomSpace
         run: git clone --depth 1 https://github.com/${{ github.repository_owner }}/atomspace atomspace
@@ -125,7 +125,7 @@ jobs:
         uses: actions/download-artifact@v4.1.3
         with:
           name: cogutil-workspace
-          path: cogutil
+          path: .
 
       - name: Download atomspace workspace
         uses: actions/download-artifact@v4.1.3
@@ -137,7 +137,7 @@ jobs:
         run: echo "MAKEFLAGS=-j2" >> $GITHUB_ENV
 
       - name: Install CogUtil
-        run: cd cogutil/build && make -j2 install && ldconfig
+        run: cd build && make -j2 install && ldconfig
 
       - name: Install AtomSpace
         run: cd atomspace/build && make install && ldconfig
@@ -199,7 +199,7 @@ jobs:
         uses: actions/download-artifact@v4.1.3
         with:
           name: cogutil-workspace
-          path: cogutil
+          path: .
 
       - name: Download atomspace workspace
         uses: actions/download-artifact@v4.1.3
@@ -211,7 +211,7 @@ jobs:
         run: echo "MAKEFLAGS=-j2" >> $GITHUB_ENV
 
       - name: Install CogUtil
-        run: cd cogutil/build && make install && ldconfig
+        run: cd build && make install && ldconfig
 
       - name: Install AtomSpace
         run: cd atomspace/build && make install && ldconfig
@@ -265,16 +265,16 @@ jobs:
         uses: actions/download-artifact@v4.1.3
         with:
           name: cogutil-workspace
-          path: cogutil
+          path: .
 
       - name: Build Debian package
-        run: cd cogutil/build && make install && make package
+        run: cd build && make install && make package
 
       - name: Upload packages
         uses: actions/upload-artifact@v4
         with:
           name: packages
-          path: cogutil/build/packages/
+          path: build/packages/
 
       - name: Get date for ccache key
         id: date
