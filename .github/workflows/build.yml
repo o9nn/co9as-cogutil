@@ -10,7 +10,7 @@ jobs:
     permissions:
       contents: read
     container:
-      image: ${{ github.repository_owner }}/opencog-deps
+      image: opencog/opencog-deps
       options: --user root
     env:
       CCACHE_DIR: /ws/ccache
@@ -60,7 +60,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions: {}
     container:
-      image: ${{ github.repository_owner }}/opencog-deps
+      image: opencog/opencog-deps
       options: --user root
     env:
       CCACHE_DIR: /ws/ccache
@@ -116,7 +116,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions: {}
     container:
-      image: ${{ github.repository_owner }}/opencog-deps
+      image: opencog/opencog-deps
       options: --user root
     env:
       CCACHE_DIR: /ws/ccache
@@ -190,7 +190,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions: {}
     container:
-      image: ${{ github.repository_owner }}/opencog-deps
+      image: opencog/opencog-deps
       options: --user root
     env:
       CCACHE_DIR: /ws/ccache
@@ -256,7 +256,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions: {}
     container:
-      image: ${{ github.repository_owner }}/opencog-deps
+      image: opencog/opencog-deps
       options: --user root
     env:
       CCACHE_DIR: /ws/ccache
